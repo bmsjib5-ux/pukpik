@@ -172,6 +172,7 @@ kbd{font-family:var(--mono);letter-spacing:1px;font-size:10px;background:rgba(25
     <div class="set"><span>โหมดใจดี — ไม่มีวันตาย</span><div class="seg" id="segKind"></div></div>
     <div class="set"><span>แถบสถานะใต้จอ</span><div class="seg" id="segVitals"></div></div>
     <div class="set"><span>เสียง</span><div class="seg" id="segSound"></div></div>
+    <div class="set"><span>สั่นเมื่อกดปุ่ม</span><div class="seg" id="segHaptic"></div></div>
     <div class="slotbox">
       <span>ช่องบันทึก — เลี้ยงพร้อมกันได้ 4 ตัว</span>
       <div class="slots" id="slots"></div>
@@ -364,7 +365,7 @@ const DIFF = {
   norm:  {label:'ปกติ',   decay:1,   risk:1,   drain:1,   regen:1},
   hard:  {label:'ท้าทาย', decay:1.6, risk:1.7, drain:1.5, regen:.8}
 };
-let opt = {diff:'easy', speed:1, kind:true, vitals:true, sound:false, paused:false};
+let opt = {diff:'easy', speed:1, kind:true, vitals:true, sound:true, haptic:true, paused:false};
 
 /* ===================== เมนูบนเครื่อง ===================== */
 const MENU = [
@@ -655,8 +656,8 @@ function save(){
 }
 function saveOpts(){
   if(!canSave) return;
-  const {diff, speed, kind, vitals, sound} = opt;
-  lsSet(OPT_KEY, JSON.stringify({diff, speed, kind, vitals, sound}));   // ตั้งค่าใช้ร่วมกันทุกช่อง
+  const {diff, speed, kind, vitals, sound, haptic} = opt;
+  lsSet(OPT_KEY, JSON.stringify({diff, speed, kind, vitals, sound, haptic}));   // ตั้งค่าใช้ร่วมกันทุกช่อง
 }
 function loadOpts(){
   const raw = lsGet(OPT_KEY);
@@ -705,7 +706,7 @@ function paintSlots(){
     const txt = document.createElement('span'); txt.textContent = slotText(n);
     pick.append(num, txt);
     pick.setAttribute('aria-label', `ช่องบันทึกที่ ${n+1}: ${txt.textContent}`);
-    pick.onclick = ()=>{ if(n===slot) return; save(); useSlot(n); render(); };
+    pick.onclick = ()=>{ if(n===slot) return; tap(620,8); save(); useSlot(n); render(); };
     row.appendChild(pick);
     if(n===slot) slotText0 = txt;
 
@@ -716,11 +717,11 @@ function paintSlots(){
       let armed = false, timer = null;
       del.onclick = ()=>{                            // กดสองครั้งเพื่อยืนยัน กันลบพลาด
         if(!armed){
-          armed = true; del.textContent = 'ยืนยัน?'; del.classList.add('arm');
+          armed = true; tap(380,18); del.textContent = 'ยืนยัน?'; del.classList.add('arm');
           timer = setTimeout(()=>{ armed=false; del.textContent='ลบ'; del.classList.remove('arm'); }, 3000);
           return;
         }
-        clearTimeout(timer); wipeSlot(n);
+        clearTimeout(timer); tap(300,30); wipeSlot(n);
       };
     }else{
       del.className = 'slot-del ghost';              // ช่องว่าง: ซ่อนไว้แต่กันที่ให้ปุ่มเรียงตรงกัน
@@ -744,7 +745,7 @@ function pressA(){
   if(g.mode==='idle') g.cursor=(g.cursor+1)%MENU.length;
   else if(g.mode==='sub') g.sub.idx=(g.sub.idx+1)%g.sub.items.length;
   else if(g.mode==='game') g.game.idx=(g.game.idx+1)%g.game.options.length;
-  beep(700,.03); render();
+  render();
 }
 function pressB(){
   if(!g.alive) return;
@@ -755,7 +756,7 @@ function pressB(){
 }
 function pressC(){
   if(!g.alive){ newGame(); return; }
-  if(g.mode!=='idle'){ g.mode='idle'; g.sub=null; g.game=null; g.msg=''; beep(320,.05); render(); }
+  if(g.mode!=='idle'){ g.mode='idle'; g.sub=null; g.game=null; g.msg=''; render(); }
 }
 
 /* ===================== เสียง ===================== */
@@ -764,12 +765,19 @@ function beep(freq,dur,delay=0,vol=.05){
   if(!opt.sound || FAST) return;
   try{
     ac = ac || new (window.AudioContext||window.webkitAudioContext)();
+    if(ac.state === 'suspended') ac.resume();
     const t=ac.currentTime+delay, o=ac.createOscillator(), gn=ac.createGain();
     o.type='square'; o.frequency.value=freq;
     gn.gain.setValueAtTime(vol,t); gn.gain.exponentialRampToValueAtTime(.0001,t+dur);
     o.connect(gn).connect(ac.destination); o.start(t); o.stop(t+dur+.02);
   }catch(e){}
 }
+
+function buzz(ms){                                   // สั่นสั้นๆ (Android รองรับ, iOS ยังไม่รองรับ)
+  if(!opt.haptic || FAST) return;
+  try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){}
+}
+function tap(freq=700, ms=12){ beep(freq,.035,0,.045); buzz(ms); }   // เสียง+สั่น ตอนกดปุ่ม
 
 /* ===================== การเดิน ===================== */
 function moveStep(){
@@ -921,7 +929,7 @@ function buildIcons(){
     const b=document.createElement('button');
     b.className='icon'; b.innerHTML=toSVG(ICONS[m.k])+`<u>${m.label}</u>`;
     b.setAttribute('aria-label',m.label);
-    b.onclick=()=>{ g.cursor=i; if(g.mode==='idle') activate(m.k); else { g.mode='idle'; g.sub=null; g.game=null; activate(m.k); } };
+    b.onclick=()=>{ tap(660); g.cursor=i; if(g.mode==='idle') activate(m.k); else { g.mode='idle'; g.sub=null; g.game=null; activate(m.k); } };
     (i<3?top:bot).appendChild(b);
   });
 }
@@ -930,7 +938,7 @@ function seg(id, items, get, set){
   const paint=()=>{ el.innerHTML=''; items.forEach(it=>{
     const b=document.createElement('button');
     b.textContent=it.label; b.className = get()===it.v ? 'act':'';
-    b.onclick=()=>{ set(it.v); saveOpts(); paint(); render(); };
+    b.onclick=()=>{ set(it.v); tap(620,8); saveOpts(); paint(); render(); };
     el.appendChild(b);
   }); };
   paint();
@@ -957,22 +965,28 @@ function setEgg(n){
   g.eggId = ((n%100)+100)%100; say(`เปลี่ยนเป็นไข่${eggName(g.eggId)} #${g.eggId}`,4);
   eggLabel(); save(); render();
 }
-document.getElementById('eggPrev').onclick = ()=>setEgg(g.eggId-1);
-document.getElementById('eggNext').onclick = ()=>setEgg(g.eggId+1);
-document.getElementById('eggRand').onclick = ()=>setEgg(Math.floor(Math.random()*100));
+document.getElementById('eggPrev').onclick = ()=>{ tap(620,8); setEgg(g.eggId-1); };
+document.getElementById('eggNext').onclick = ()=>{ tap(620,8); setEgg(g.eggId+1); };
+document.getElementById('eggRand').onclick = ()=>{ tap(760,8); setEgg(Math.floor(Math.random()*100)); };
 seg('segKind', [{label:'เปิด',v:true},{label:'ปิด',v:false}], ()=>opt.kind, v=>opt.kind=v);
 seg('segVitals',[{label:'แสดง',v:true},{label:'ซ่อน',v:false}], ()=>opt.vitals, v=>opt.vitals=v);
 seg('segSound',[{label:'เปิด',v:true},{label:'ปิด',v:false}], ()=>opt.sound, v=>{opt.sound=v; beep(760,.07);});
+seg('segHaptic',[{label:'เปิด',v:true},{label:'ปิด',v:false}], ()=>opt.haptic, v=>{opt.haptic=v; buzz(25);});
 
 const padA=document.getElementById('padA'), padB=document.getElementById('padB'), padC=document.getElementById('padC');
-const hit=el=>{ el.classList.add('hit'); setTimeout(()=>el.classList.remove('hit'),90); };
+const PAD_TONE = {padA:700, padB:880, padC:420};
+const hit=el=>{                                      // เด้งปุ่ม + เสียงคลิก + สั่น
+  el.classList.add('hit'); setTimeout(()=>el.classList.remove('hit'),90);
+  tap(PAD_TONE[el.id] || 700, el.id==='padC' ? 18 : 12);
+};
 padA.onclick=()=>{hit(padA);pressA();}; padB.onclick=()=>{hit(padB);pressB();}; padC.onclick=()=>{hit(padC);pressC();};
 
 document.getElementById('pause').onclick=e=>{
+  tap(520,8);
   opt.paused=!opt.paused;
   e.target.textContent = opt.paused ? 'เดินเวลาต่อ' : 'หยุดเวลา';
 };
-document.getElementById('reset').onclick=()=>{ newGame(); paintSlots(); };
+document.getElementById('reset').onclick=()=>{ tap(520,18); newGame(); paintSlots(); };
 document.getElementById('nm').oninput=()=>{ render(); save(); refreshSlotText(); };
 
 addEventListener('keydown', e=>{

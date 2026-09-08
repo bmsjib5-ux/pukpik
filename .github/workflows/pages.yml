@@ -24,10 +24,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ครั้งแรกต้องไปตั้ง Settings → Pages → Source: GitHub Actions ด้วยตัวเองก่อน
+      # (GITHUB_TOKEN ไม่มีสิทธิ์ admin พอที่จะสร้าง Pages site ให้เอง)
       - name: Configure Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true          # เปิด GitHub Pages ให้อัตโนมัติถ้ายังไม่ได้เปิด
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3

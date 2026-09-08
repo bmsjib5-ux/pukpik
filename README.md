@@ -30,12 +30,27 @@ python3 -m http.server 8000
 ตั้งค่าที่ใช้: `staticPublishPath: .` และ rewrite ทุก path ไปที่ `/index.html`
 ทุกครั้งที่ push เข้า branch ที่ผูกไว้ Render จะ deploy ให้อัตโนมัติ
 
+## Deploy ขึ้น GitHub Pages
+
+รีโปนี้มี workflow `.github/workflows/pages.yml` ที่ deploy ให้ทุกครั้งที่ push เข้า `main`
+เหลือเปิดสวิตช์ครั้งเดียว (GitHub ไม่ยอมให้ workflow เปิด Pages ให้ตัวเองในครั้งแรก):
+
+1. เข้า **Settings → Pages** ของรีโป
+2. ที่ **Source** เลือก **GitHub Actions**
+3. ไปที่แท็บ **Actions → Deploy to GitHub Pages → Run workflow** (หรือรอ push ครั้งถัดไป)
+
+จะได้ URL `https://bmsjib5-ux.github.io/pukpik/`
+
+> ถ้าเลือก Source เป็น *Deploy from a branch* (`main` / `/ (root)`) ก็ใช้งานได้เหมือนกัน
+> แต่ให้ลบ `.github/workflows/pages.yml` ทิ้ง ไม่งั้น workflow จะขึ้นล้มเหลวทุกครั้งที่ push
+
 ## โครงสร้างไฟล์
 
 | ไฟล์ | หน้าที่ |
 | --- | --- |
 | `index.html` | ตัวเกมทั้งหมด (HTML + CSS + JS + ไอคอน ในไฟล์เดียว) |
 | `render.yaml` | Blueprint สำหรับ deploy เป็น static site บน Render |
+| `.github/workflows/pages.yml` | Deploy ขึ้น GitHub Pages ทุกครั้งที่ push เข้า `main` |
 
 ## ช่องบันทึก
 

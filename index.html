@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#211a34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ปุ๊กปิ๊ก">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%235a4691'/><ellipse cx='16' cy='17' rx='8.5' ry='10.5' fill='%239aab4c'/><rect x='12' y='14' width='2' height='3' fill='%23232c0d'/><rect x='18' y='14' width='2' height='3' fill='%23232c0d'/></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%235a4691'/><ellipse cx='16' cy='17' rx='8.5' ry='10.5' fill='%239aab4c'/><rect x='12' y='14' width='2' height='3' fill='%23232c0d'/><rect x='18' y='14' width='2' height='3' fill='%23232c0d'/></svg>">
+<title>ปุ๊กปิ๊ก — สัตว์เลี้ยงพกพา</title>
+<style>
+:root{
+  --thai:'Sukhumvit Set','Noto Sans Thai','Leelawadee UI','IBM Plex Sans Thai',-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,sans-serif;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --void:#211a34;
+  --shell:#5a4691;
+  --shell-hi:#7e69bd;
+  --shell-lo:#3b2d66;
+  --lcd:#9aab4c;
+  --lcd-2:#8b9c41;
+  --ink:#232c0d;
+  --ink-soft:rgba(35,44,13,.45);
+  --btn:#f2c24c;
+  --btn-lo:#c99a2c;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+button,summary{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;overscroll-behavior:none;font-family:var(--thai);font-weight:300;color:#d9d0f0;
+  background:radial-gradient(120% 80% at 50% -10%, #453372 0%, transparent 60%), var(--void);
+  display:flex;flex-direction:column;align-items:center;gap:20px;padding:calc(22px + env(safe-area-inset-top)) 16px calc(44px + env(safe-area-inset-bottom));
+}
+.ring{width:34px;height:34px;border-radius:50%;border:6px solid var(--shell-lo);margin-bottom:-16px;box-shadow:inset 0 2px 3px rgba(0,0,0,.5)}
+.device{
+  -webkit-user-select:none;user-select:none;
+  position:relative;width:min(346px,94vw);padding:28px 22px 24px;
+  border-radius:48% 48% 44% 44% / 32% 32% 50% 50%;
+  background:radial-gradient(75% 55% at 30% 12%, var(--shell-hi) 0%, transparent 55%),
+             linear-gradient(160deg, var(--shell) 0%, var(--shell-lo) 100%);
+  box-shadow:inset 0 -10px 24px rgba(0,0,0,.45), inset 0 8px 18px rgba(255,255,255,.14), 0 26px 44px rgba(0,0,0,.5);
+}
+.brand{font-weight:500;font-size:13px;text-align:center;color:rgba(255,255,255,.62);margin:0 0 12px}
+
+.icons{display:flex;justify-content:center;gap:9px;margin:0 0 10px}
+.icons.bottom{margin:12px 0 12px}
+.icon{width:40px;height:40px;border:none;padding:6px 6px 3px;cursor:pointer;border-radius:9px;
+  background:rgba(0,0,0,.16);display:flex;flex-direction:column;align-items:center;gap:2px;position:relative;transition:background .12s}
+.icon svg{width:20px;height:20px;fill:rgba(255,255,255,.55)}
+.icon u{font-size:8.5px;text-decoration:none;color:rgba(255,255,255,.5);font-weight:300;line-height:1}
+.icon.on{background:var(--lcd)}
+.icon.on svg{fill:var(--ink)} .icon.on u{color:var(--ink)}
+.icon.alert::after{content:"";position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;
+  background:#ffe0e0;animation:blip .9s steps(2,end) infinite}
+.icon:focus-visible{outline:3px solid #ffe9a8;outline-offset:2px}
+@keyframes blip{0%{opacity:1}50%{opacity:0}}
+
+.screen{border-radius:12px;padding:10px;background:linear-gradient(180deg,#1d1735,#332a55);box-shadow:inset 0 3px 8px rgba(0,0,0,.6)}
+.lcd{position:relative;aspect-ratio:32/24;background:linear-gradient(170deg,var(--lcd),var(--lcd-2));border-radius:4px;overflow:hidden}
+.lcd canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
+.dots{position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(90deg, rgba(0,0,0,.09) 0 1px, transparent 1px 3.125%),
+             repeating-linear-gradient(0deg, rgba(0,0,0,.09) 0 1px, transparent 1px 4.1666%)}
+.night{position:absolute;inset:0;pointer-events:none;background:#1b2216;opacity:0;transition:opacity .35s}
+.lcd.dark .night{opacity:.6}
+.strip{position:absolute;left:0;right:0;bottom:0;height:20.8%;display:flex;align-items:center;justify-content:center;
+  font-size:clamp(11px,3.3vw,13px);color:var(--ink);border-top:1px solid var(--ink-soft);
+  background:rgba(255,255,255,.08);padding:0 8px;text-align:center;line-height:1.15}
+.panel{position:absolute;inset:0 0 20.8% 0;display:none;flex-direction:column;justify-content:center;gap:4px;padding:8px 12px;color:var(--ink)}
+.panel.show{display:flex}
+.panel h2{margin:0 0 3px;font-size:12.5px;font-weight:500}
+.row{display:flex;align-items:center;gap:8px;font-size:11.5px}
+.row span{width:46px;flex:none}
+.bar{flex:1;display:flex;gap:2px}
+.bar i{flex:1;height:8px;background:rgba(35,44,13,.16);border-radius:1px}
+.bar i.f{background:var(--ink)}
+.opt{font-size:12.5px;padding:2px 7px;border-radius:3px;line-height:1.35}
+.opt.sel{background:var(--ink);color:var(--lcd)}
+.opt svg{width:11px;height:11px;fill:currentColor;vertical-align:-1px;margin-right:5px}
+.big{font-family:var(--mono);letter-spacing:1px;font-size:30px;text-align:center;margin:2px 0 4px}
+
+.vitals{display:grid;grid-template-columns:repeat(3,1fr);gap:5px 12px;padding:2px 4px 10px}
+.vitals div{display:flex;align-items:center;gap:5px;font-size:10.5px;color:rgba(255,255,255,.6)}
+.vitals em{flex:none;font-style:normal;width:30px}
+.vitals b{flex:1;height:5px;border-radius:3px;background:rgba(0,0,0,.28);overflow:hidden}
+.vitals b s{display:block;height:100%;background:#ffe08a;text-decoration:none}
+.vitals b s.low{background:#ff9d8a}
+
+.pads{display:flex;justify-content:space-around;margin-top:14px}
+.pad{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;cursor:pointer}
+.pad b{width:50px;height:50px;border-radius:50%;
+  background:radial-gradient(70% 70% at 35% 25%, #ffdf90, var(--btn) 55%, var(--btn-lo));
+  box-shadow:0 5px 0 #8f6c15, inset 0 -3px 6px rgba(0,0,0,.25);display:grid;place-items:center;
+  font-family:var(--mono);letter-spacing:1px;font-size:17px;color:#5b4409;transition:transform .06s, box-shadow .06s}
+.pad:active b,.pad.hit b{transform:translateY(4px);box-shadow:0 1px 0 #8f6c15, inset 0 -2px 5px rgba(0,0,0,.3)}
+.pad small{font-size:11px;color:rgba(255,255,255,.6)}
+.pad:focus-visible b{outline:3px solid #ffe9a8;outline-offset:3px}
+
+.sheet{width:min(346px,94vw);font-size:12.5px;color:rgba(217,208,240,.8)}
+.sheet summary{cursor:pointer;padding:9px 12px;border-radius:9px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);list-style:none}
+.sheet summary::-webkit-details-marker{display:none}
+.sheet[open] summary{border-radius:9px 9px 0 0}
+.opts{border:1px solid rgba(255,255,255,.12);border-top:none;border-radius:0 0 9px 9px;padding:12px;display:grid;gap:11px}
+.set{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.seg{display:flex;gap:4px}
+.seg button, .plain{font-family:var(--thai);font-weight:300;font-size:12px;color:#e6ddff;cursor:pointer;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:5px 10px}
+.seg button.act{background:#ffe08a;color:#3a2c0a;border-color:#ffe08a}
+.seg button:focus-visible,.plain:focus-visible{outline:2px solid #b49bff;outline-offset:1px}
+input[type=text]{font-family:var(--thai);font-weight:400;font-size:12.5px;color:#f3ecff;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:5px 9px;width:130px}
+.hint{width:min(346px,94vw);font-size:12px;line-height:1.7;color:rgba(217,208,240,.6);margin:0}
+kbd{font-family:var(--mono);letter-spacing:1px;font-size:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:2px 5px}
+@media (prefers-reduced-motion:reduce){.icon.alert::after{animation:none}*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="ring" aria-hidden="true"></div>
+
+<main class="device">
+  <p class="brand">ปุ๊กปิ๊ก</p>
+  <div class="icons" id="iconsTop"></div>
+
+  <div class="screen">
+    <div class="lcd" id="lcd">
+      <canvas id="cv" width="32" height="24"></canvas>
+      <div class="dots" aria-hidden="true"></div>
+      <div class="night" aria-hidden="true"></div>
+      <div class="panel" id="panel"></div>
+      <div class="strip" id="strip" role="status" aria-live="polite">กำลังฟักไข่...</div>
+    </div>
+  </div>
+
+  <div class="icons bottom" id="iconsBottom"></div>
+  <div class="vitals" id="vitals"></div>
+
+  <div class="pads">
+    <button class="pad" id="padA"><b>A</b><small>เลื่อน</small></button>
+    <button class="pad" id="padB"><b>B</b><small>เลือก</small></button>
+    <button class="pad" id="padC"><b>C</b><small>ย้อนกลับ</small></button>
+  </div>
+</main>
+
+<details class="sheet">
+  <summary>ตั้งค่าและตัวเลือก</summary>
+  <div class="opts">
+    <div class="set"><label for="nm">ชื่อสัตว์เลี้ยง</label><input type="text" id="nm" maxlength="12" value="ปุ๊กปิ๊ก"></div>
+    <div class="set"><span>ระดับความยาก</span><div class="seg" id="segDiff"></div></div>
+    <div class="set"><span>ความเร็วเวลา</span><div class="seg" id="segSpeed"></div></div>
+    <div class="set"><span id="eggLbl">ไข่ #0</span><div class="seg"><button id="eggPrev">◀</button><button id="eggRand">สุ่มไข่</button><button id="eggNext">▶</button></div></div>
+    <div class="set"><span>โหมดใจดี — ไม่มีวันตาย</span><div class="seg" id="segKind"></div></div>
+    <div class="set"><span>แถบสถานะใต้จอ</span><div class="seg" id="segVitals"></div></div>
+    <div class="set"><span>เสียง</span><div class="seg" id="segSound"></div></div>
+    <div class="set">
+      <button class="plain" id="pause">หยุดเวลา</button>
+      <button class="plain" id="reset">ฟักไข่ใบใหม่</button>
+    </div>
+    <p style="margin:0;font-size:11.5px;color:rgba(217,208,240,.55)" id="saveNote">บันทึกอัตโนมัติ</p>
+  </div>
+</details>
+
+<p class="hint">ไข่สุ่มได้ 100 ใบ และวิวัฒนาการได้ 100 ร่าง — เล่นออฟไลน์ได้ทั้งหมด ไม่ต้องต่อเน็ต — บนมือถือกด “แชร์ → เพิ่มไปยังหน้าจอโฮม” แล้วเปิดเล่นได้เหมือนแอป ระบบจำสถานะล่าสุดให้เอง<br>แตะไอคอนได้โดยตรง หรือใช้ <kbd>A</kbd> เลื่อน <kbd>B</kbd> เลือก <kbd>C</kbd> ย้อนกลับ (คีย์บอร์ดกด A B C หรือเลข 1–6 เพื่อเปิดเมนูนั้นเลย) ไอคอนที่กะพริบคือสิ่งที่มันกำลังต้องการ</p>
+
+<script>
+/* ===================== ภาพพิกเซล ===================== */
+const SP = {
+  egg:["................",".......##.......","......####......",".....######.....",".....######.....",
+       "....########....","....########....","...##########...","...###..#####...","..############..",
+       "..#####..#####..","..############..",".##############.",".####..########.",".##############.","..############.."],
+  baby:["................","................",".....######.....","....########....","...##########...",
+        "...##########...","...##########...","...##########...","...##########...","...##########...",
+        "...##########...","....########....",".....######.....","....##....##....","...###....###...","................"],
+  child:["................","........#.......",".......#........","....########....","...##########...",
+         "..############..","..############..","..############..","..############..","..############..",
+         "..############..","..############..","..############..","...##########...","...###....###...","..####....####.."],
+  teen:["................",".....######.....","....########....","...##########...","...##########...",
+        "...##########...","...##########...","...##########...","..############..",".##############.",
+        ".##..######..##.",".##############.","..############..","...##########...","...###....###...","..####....####.."],
+  adultA:["....#..#..#.....","....########....","...##########...","..############..","..############..",
+          "..############..","..############..","..############..",".##############.","###..######..###",
+          ".##############.","..############..","..############..","...##########...","...###....###...","..####....####.."],
+  adultB:["................","................","....########....","..############..",".##############.",
+          ".##############.",".##############.",".##############.",".###..####..###.",".##############.",
+          "..############..","..####....####..","..############..","...##########...","..####....####..",".#####....#####."],
+  ghost:["................",".....######.....","....########....","...##########...","..############..",
+         "..##.######.##..","..##.######.##..","..############..","..############..","..###..##..###..",
+         "..############..","..############..","..############..","..############..","..##.##.##.##...","..#..#..#..#...."]
+};
+
+/* สีหน้า: "#" คือจุดที่เจาะให้เป็นช่องว่าง (กว้าง 10 สูง 6) */
+const FACES = {
+  neutral:[".##....##.",".##....##.","..........","...####...","..........",".........."],
+  smile:  [".##....##.",".##....##.","..........","..#....#..","...####...",".........."],
+  happy:  ["..#....#..",".#.#..#.#.","..........","...####...","...####...",".........."],
+  sad:    ["..........",".##....##.",".##....##.","..........","...####...","..#....#.."],
+  angry:  ["#........#","##......##",".##....##.","..........","..######..",".........."],
+  cry:   [[".##....##.",".##....##.",".#......#.","...####...","...####...",".........."],
+          [".##....##.",".##....##.","..........",".#.####.#.","...####...",".#......#."]],
+  sleep:  ["..........","###....###","..........","...####...","..........",".........."],
+  sick:   ["#.#....#.#",".#......#.","#.#....#.#","..........","..######..",".........."]
+};
+
+/* ===================== เครื่องสุ่มไข่ & ร่างวิวัฒนาการ ===================== */
+function rng(seed){ let t = (seed*2654435761 + 97) >>> 0;
+  return ()=>{ t = (t*1664525 + 1013904223) >>> 0; return t/4294967296; }; }
+function grid(){ return Array.from({length:16}, ()=> Array(16).fill('.')); }
+function toRows(gd){ return gd.map(r=>r.join('')); }
+function fillRow(gd,y,w){ if(y<0||y>15) return; const s0=8-Math.floor(w/2);
+  for(let x=s0;x<s0+w;x++) if(x>=0&&x<16) gd[y][x]='#'; }
+function stamp(gd,rows,oy){ rows.forEach((row,y)=>[...row].forEach((c,x)=>{
+  const Y=oy+y; if(c==='#'&&Y>=0&&Y<16) gd[Y][x]='#'; })); }
+
+/* ---- ไข่: 4 ทรง x 5 ลาย x 5 แบบย่อย = 100 ใบ ---- */
+const EGG_SHAPES=[
+  {p:[2,4,6,8,10,12,12,14,14,12,10,6],  n:'ทรงคลาสสิก'},
+  {p:[4,6,8,10,12,12,14,14,14,14,12,8], n:'ทรงป้อม'},
+  {p:[2,4,4,6,8,8,10,10,10,10,8,6],     n:'ทรงเรียว'},
+  {p:[6,8,10,12,12,14,14,14,14,12,10,8],n:'ทรงกลม'}
+];
+const EGG_PATTERNS=['ลายจุด','ลายขวาง','ลายซิกแซก','ลายประกาย','ลายปื้น'];
+const eggCache={};
+function eggSprite(id){
+  id=((id%100)+100)%100;
+  if(eggCache[id]) return eggCache[id];
+  const shape=Math.floor(id/25), pat=Math.floor((id%25)/5), v=id%5;
+  const gd=grid(), top=2, prof=EGG_SHAPES[shape].p;
+  prof.forEach((w,i)=>fillRow(gd,top+i,w));
+  const hole=(y,x)=>{ if(y>=0&&y<16&&x>=0&&x<16&&gd[y][x]==='#') gd[y][x]='.'; };
+  if(pat===0){ for(let i=0;i<3+(v%2);i++){ const y=top+3+((i*3+v)%8), x=4+((i*5+v*2)%8);
+                 hole(y,x); hole(y,x+1); hole(y+1,x); hole(y+1,x+1); } }
+  else if(pat===1){ for(let i=0;i<3;i++){ const y=top+2+i*3+(v%3);
+                      for(let x=2+((i+v)%2);x<14;x+=2) hole(y,x); } }
+  else if(pat===2){ for(let x=2;x<14;x++) hole(top+4+(v%2)+((x+v)%3), x); }
+  else if(pat===3){ const pts=[[4,6],[7,10],[9,5],[6,4],[10,9],[8,7]];
+                    for(let i=0;i<4;i++){ const q=pts[(i+v)%pts.length], y=top+q[0], x=q[1];
+                      hole(y,x); hole(y-1,x); hole(y+1,x); hole(y,x-1); hole(y,x+1); } }
+  else { const y0=top+4+(v%3), x0=3+(v%5);
+         for(let y=y0;y<y0+4;y++) for(let x=x0;x<x0+6-(y-y0);x++) hole(y,x); }
+  return eggCache[id]=toRows(gd);
+}
+const eggName = id => `${EGG_SHAPES[Math.floor((id%100)/25)].n}${EGG_PATTERNS[Math.floor((id%25)/5)]}`;
+
+/* ---- ร่าง: 5 ลำตัว x 10 หัว x 2 แขน = 100 ร่าง ---- */
+const BODIES=[
+  {p:[6,8,10,12,12,12,12,12,12,10,8,6],    n:'กลมกลิ้ง'},
+  {p:[4,6,8,10,10,12,12,12,12,12,10,8],    n:'หยดหยาด'},
+  {p:[10,12,12,12,12,12,12,12,12,12,12,10],n:'ก้อนโต'},
+  {p:[6,8,10,10,10,10,12,12,12,12,12,10],  n:'ลูกแพร์'},
+  {p:[6,8,10,10,10,10,10,10,10,10,8,6],    n:'เพรียวลม'}
+];
+const HEADS=[
+  {r:null, n:'หัวเกลี้ยง'},
+  {r:["....##....##....","....##....##....",".....#....#....."], n:'หูยาว'},
+  {r:[".....#....#.....",".....##..##.....","......#..#......"], n:'เขาคู่'},
+  {r:[".....##..##.....","......#..#......","......#..#......"], n:'หนวดเสา'},
+  {r:["....#..#..#.....","....########....","................"], n:'ทรงมงกุฎ'},
+  {r:["......####......",".....######.....","................"], n:'หงอนตั้ง'},
+  {r:["...##......##...","....##....##....","................"], n:'ครีบข้าง'},
+  {r:["...##......##...","...###....###...","...####..####..."], n:'หูแมว'},
+  {r:[".......##.......","......####......","................"], n:'ปมผม'},
+  {r:["...#...##...#...","....#.####.#....","......####......"], n:'เขากวาง'}
+];
+const LEVEL={baby:1, child:2, teen:3, adultA:4, adultB:4};
+const formName = (id, fancy) => {
+  id=((id%100)+100)%100;
+  const b=Math.floor(id/10)%5, h=id%10, arm=Math.floor(id/50)%2;
+  return BODIES[b].n + HEADS[h].n + (arm?'ปีกกว้าง':'') + (fancy?' ผู้สง่างาม':'');
+};
+const formCache={};
+function creature(id, level, fancy){
+  id=((id%100)+100)%100;
+  const key=id+'-'+level+'-'+(fancy?1:0);
+  if(formCache[key]) return formCache[key];
+  const head=id%10, body=Math.floor(id/10)%5, armV=Math.floor(id/50)%2;
+  const R=rng(id+7), legV=Math.floor(R()*3), patV=Math.floor(R()*4);
+  const base=BODIES[body].p;
+  let prof, top;
+  if(level===1){ prof=[0,2,3,5,6,8,9,11].map((i,k)=>{ const w=Math.min(10,base[i]-2);
+                   return (k<=1||k>=6) ? Math.max(6,w-2) : Math.max(8,w); }); top=6; }
+  else if(level===2){ prof=[0,1,3,4,5,6,7,9,10,11].map(i=>Math.min(12,base[i])); top=4; }
+  else { prof=base.slice(); top=3; }
+  const gd=grid(), h=prof.length, bottom=top+h-1;
+  prof.forEach((w,i)=>fillRow(gd,top+i,w));
+
+  if(level>=2 && HEADS[head].r) stamp(gd, HEADS[head].r, top-3);
+
+  const hole=(y,x)=>{ if(y>=0&&y<16&&x>=0&&x<16&&gd[y][x]==='#') gd[y][x]='.'; };
+  if(level>=3 && patV>0){                          // ลายบนตัว (อยู่ใต้ใบหน้า เหนือขา)
+    if(patV===1){ [5,10].forEach(x=>{ hole(top+7,x); hole(top+8,x); }); }            // จุดคู่
+    else if(patV===2){ [4,6,8,10].forEach(x=>{ hole(top+7,x); hole(top+8,x+1); }); }  // ลายประ
+    else { hole(top+7,6); hole(top+7,9); hole(top+8,7); hole(top+8,8); }              // ลายลูกศร
+  }
+  if(level>=3){                                   // แขนหรือปีก
+    const mid=top+Math.floor(h*0.55);
+    const rows = armV ? [[mid-1,1],[mid,2],[mid+1,1]] : [[mid,2]];
+    rows.forEach(([y,ext])=>{
+      const w=prof[y-top]||10, L=8-Math.floor(w/2), Rr=8+Math.floor(w/2)-1;
+      for(let i=1;i<=ext;i++){ if(L-i>=0) gd[y][L-i]='#'; if(Rr+i<16) gd[y][Rr+i]='#'; }
+    });
+  }
+  if(level===1){ for(const x of [4,5,10,11]) if(top+8<16) gd[top+8][x]='#'; }   // เท้าจิ๋วของลูกอ่อน
+  if(level>=2 && legV<2){                          // ขา
+    const pat = legV===0 ? ["...###....###...","..####....####.."]
+                         : ["..####....####..","................"];
+    for(let i=0;i<2;i++){ const y=bottom-1+i; if(y>=0&&y<16) for(let x=0;x<16;x++) gd[y][x]=pat[i][x]; }
+  }
+  const out={rows:toRows(gd), face:{x:3, y:top+2}};
+  return formCache[key]=out;
+}
+const STAR=[".#.","###",".#."];
+
+const POOP  = ["..#..",".###.","#####"];
+const ZZZ   = ["####","..#.",".#..","####"];
+const SKULL = [".###.","#####","#.#.#","#####",".#.#."];
+const HEART = [".#.#.","#####","#####",".###.","..#.."];
+const RICE  = ["..####..",".######.","########","########",".######.","..####.."];
+const FRUIT = ["...#.#..","..##.##.",".#######","########","########","########",".######.","..####.."];
+const CAKE  = ["...##...","...##...",".######.","########","########",".#.##.#.",".#.##.#.","..####.."];
+const MILK  = ["..#..#..",".#..#...","########","#......#","#......#","#.####.#","#.####.#",".######."];
+const BALL  = [".###.","#####","##.##","#####",".###."];
+const DROP  = ["..#..",".###.","#####","#####",".###."];
+
+const ICONS = {
+  food:["........","........","#......#","########","########",".######.","..####..","........"],
+  play:["..####..",".######.","########","##....##","##....##","########",".######.","..####.."],
+  care:["...##...","...##...","..####..",".######.","########","########",".######.","..####.."],
+  light:["..####..",".######.",".######.",".######.","..####..","...##...","..####..","...##..."],
+  med:["..####..","..####..","########","########","########","########","..####..","..####.."],
+  status:[".##..##.","########","########","########",".######.","..####..","...##...","........"]
+};
+function toSVG(rows){
+  let r=""; rows.forEach((row,y)=>[...row].forEach((c,x)=>{ if(c==='#') r+=`<rect x="${x}" y="${y}" width="1" height="1"/>`; }));
+  return `<svg viewBox="0 0 ${rows[0].length} ${rows.length}" aria-hidden="true">${r}</svg>`;
+}
+
+/* ===================== ตัวเลือก ===================== */
+const DIFF = {
+  easy:  {label:'ง่าย',   decay:.55, risk:.35, drain:.5,  regen:1.5},
+  norm:  {label:'ปกติ',   decay:1,   risk:1,   drain:1,   regen:1},
+  hard:  {label:'ท้าทาย', decay:1.6, risk:1.7, drain:1.5, regen:.8}
+};
+let opt = {diff:'easy', speed:1, kind:true, vitals:true, sound:false, paused:false};
+
+/* ===================== เมนูบนเครื่อง ===================== */
+const MENU = [
+  {k:'food',  label:'อาหาร'},
+  {k:'play',  label:'เล่น'},
+  {k:'care',  label:'ดูแล'},
+  {k:'light', label:'ไฟ'},
+  {k:'med',   label:'ยา'},
+  {k:'status',label:'สถานะ'}
+];
+const FOODS = [
+  {n:'ข้าวจานใหญ่ · อิ่มมาก',      f:35, h:3,  hp:0,  e:0,  m:'อร่อยจนเลียจาน!',  sp:RICE},
+  {n:'ผลไม้รวม · ดีต่อสุขภาพ',    f:18, h:7,  hp:6,  e:0,  m:'สดชื่นสุดๆ',      sp:FRUIT},
+  {n:'ขนมหวาน · สุขใจแต่ไม่ดีนัก', f:10, h:22, hp:-3, e:0,  m:'หวานฉ่ำ ชอบมาก!', sp:CAKE},
+  {n:'นมอุ่น · ได้แรง',           f:12, h:5,  hp:2,  e:16, m:'อุ่นท้องสบายตัว',  sp:MILK}
+];
+
+/* ===================== สถานะเกม ===================== */
+let g, clock=null, FAST=false;
+
+function freshState(){
+  return {
+    stage:'egg',  age:0,
+    full:100, happy:85, energy:100, clean:100, hp:100, disc:20,
+    poops:0, sick:false, asleep:false, lightOff:false, alive:true, critical:0,
+    mistakes:0, neglect:0, poopIn:45, hugCd:0, trainCd:0,
+    mode:'idle', cursor:0, sub:null, game:null,
+    msg:'ไข่กำลังขยับ... รอสักครู่', msgT:99,
+    fx:null, fxT:0, frame:0, face:null, faceT:0,
+    px:8, dir:1, walk:0, walkT:6,
+    eggId:Math.floor(Math.random()*100), formId:null, lastTs:Date.now()
+  };
+}
+function newGame(){ g = freshState(); save(); render(); }
+const D = () => DIFF[opt.diff];
+const clamp = v => Math.max(0, Math.min(100, v));
+const days = () => Math.floor(g.age/60);
+const petName = () => (document.getElementById('nm').value.trim() || 'ปุ๊กปิ๊ก');
+function say(t,hold=5){ if(FAST) return; g.msg=t; g.msgT=hold; }
+
+/* ===================== เวลาเดิน ===================== */
+function tick(){
+  if(!g.alive || opt.paused) return;
+  g.age++;
+  if(g.msgT>0 && --g.msgT===0) g.msg='';
+  if(g.faceT>0 && --g.faceT===0) g.face=null;
+  if(g.hugCd>0) g.hugCd--;
+  if(g.trainCd>0) g.trainCd--;
+
+  if(g.stage==='egg'){
+    if(g.age>=10){ g.stage='baby'; setFace('happy',8);
+      if(g.formId===null) g.formId=Math.floor(Math.random()*100);
+      say(`ฟักออกมาเป็น ${formName(g.formId)} #${g.formId}`,8); beep(880,.08); beep(1180,.1,.09); }
+    return FAST?null:render();
+  }
+
+  const k = D().decay;
+  if(g.asleep){
+    g.energy = clamp(g.energy + 3);
+    g.full   = clamp(g.full - .1*k);
+    if(g.energy>=100){ g.asleep=false; if(g.lightOff) say('ตื่นแล้ว เปิดไฟให้หน่อย',5); }
+  }else{
+    g.full   = clamp(g.full  - .35*k);
+    g.happy  = clamp(g.happy - .26*k);
+    g.energy = clamp(g.energy- .24*k);
+    g.clean  = clamp(g.clean - .12*k);
+    if(g.lightOff){
+      g.happy = clamp(g.happy - .6);
+      if(g.energy<60){ g.asleep=true; say('หลับปุ๋ย...',4); }
+    }
+    if(g.energy<=0){ g.asleep=true; say('หมดแรง เผลอหลับไปเลย',5); }
+    if(--g.poopIn<=0 && g.full>15){
+      g.poops = Math.min(4, g.poops+1);
+      g.clean = clamp(g.clean-18);
+      g.poopIn = 55 + Math.floor(Math.random()*35);
+      beep(220,.09);
+    }
+  }
+
+  let d = 0;
+  if(g.full  <= 5) d -= 1.6;
+  if(g.happy <= 5) d -= .8;
+  if(g.clean <= 10) d -= 1;
+  if(g.sick)       d -= 1.8;
+  d *= D().drain;
+  if(d===0 && g.full>50 && g.happy>50 && g.clean>50 && !g.sick) d = .9 * D().regen;
+  g.hp = clamp(g.hp + d);
+
+  if(!g.sick){
+    const risk = (.0015 + (g.clean<30?.005:0) + (g.full<20?.005:0) + (g.hp<40?.004:0)) * D().risk;
+    if(Math.random()<risk){ g.sick=true; say('ไม่สบายแล้ว ให้ยาหน่อย',7); beep(160,.2); }
+  }
+
+  if(g.full<15 || g.happy<15 || g.clean<15 || g.sick){
+    if(++g.neglect % 12 === 0) g.mistakes++;
+  }
+
+  const before = g.stage;
+  if(g.age>=360)      g.stage = (g.mistakes<8 && g.disc>40) ? 'adultA' : 'adultB';
+  else if(g.age>=200) g.stage = 'teen';
+  else if(g.age>=80)  g.stage = 'child';
+  if(before!==g.stage){ setFace('happy',6);
+    say(g.stage.startsWith('adult') ? `ร่างสมบูรณ์: ${formName(g.formId, g.stage==='adultA')}` : 'โตขึ้นอีกขั้นแล้ว!',8); beep(660,.09); beep(990,.12,.1); }
+
+  if(g.hp<=0){
+    if(opt.kind){
+      g.hp = 1; g.critical = 1;
+      if(g.age%4===0) say('อ่อนแรงมาก ช่วยดูแลด่วน!',4);
+    }else{
+      g.critical++;
+      if(g.critical===1){ say('อาการหนักมาก! รีบดูแลใน 20 วินาที',20); beep(200,.3); }
+      if(g.critical>20){ g.alive=false; g.asleep=false; g.mode='over';
+        say(`${petName()} จากไปอย่างสงบ · อายุ ${days()} วัน`,9999); beep(300,.25); beep(200,.35,.26); }
+    }
+  }else if(g.hp>25) g.critical = 0;
+
+  if(!FAST) render();
+}
+
+/* ===================== เดินเวลาย้อนหลังตอนกลับมาเล่นต่อ ===================== */
+function catchUp(){
+  const now = Date.now();
+  const gap = Math.floor((now - (g.lastTs||now))/1000);
+  g.lastTs = now;
+  if(opt.paused || gap < 3){ render(); return; }
+  const steps = Math.min(gap * opt.speed, 21600);   // ไล่ให้มากสุดเท่ากับ 6 ชั่วโมง
+  FAST = true;
+  for(let i=0;i<steps && g.alive;i++) tick();
+  FAST = false;
+  const m = Math.round(gap/60);
+  say(m<1 ? 'กลับมาแล้ว!' : m<60 ? `กลับมาแล้ว · ไม่อยู่ไป ${m} นาที` : `กลับมาแล้ว · ไม่อยู่ไป ${Math.round(m/60)} ชั่วโมง`, 8);
+  render();
+}
+
+/* ===================== การกระทำ ===================== */
+function alerts(){
+  if(!g.alive || g.stage==='egg') return {};
+  return {
+    food:  g.full<30 && !g.asleep,
+    play:  g.happy<30 && !g.asleep,
+    care:  g.poops>0 || g.clean<35,
+    light: (g.energy<25 && !g.lightOff) || (!g.asleep && g.lightOff),
+    med:   g.sick,
+    status:g.hp<45
+  };
+}
+
+function openSub(title, items){ g.sub={title, items, idx:0}; g.mode='sub'; }
+
+function activate(key){
+  if(!g.alive) return;
+  if(g.stage==='egg'){ say('ไข่ยังไม่ฟักเลย ใจเย็นๆ',3); return render(); }
+  if(g.asleep && key!=='light' && key!=='status'){ say('กำลังหลับอยู่ อย่าเพิ่งกวน',3); return render(); }
+
+  if(key==='food'){
+    openSub('จะให้อะไรดี', FOODS.map((f,i)=>({label:f.n, icon:f.sp, run:()=>feed(i)})));
+  }
+  else if(key==='play'){
+    if(g.energy<15){ say('ไม่มีแรงเล่นแล้ว...',4); }
+    else openSub('เลือกเกม',[
+      {label:'ทายซ้าย–ขวา', run:()=>startGame('lr')},
+      {label:'เป่ายิ้งฉุบ',  run:()=>startGame('rps')},
+      {label:'ทายสูง–ต่ำ',   run:()=>startGame('hilo')}
+    ]);
+  }
+  else if(key==='care'){
+    openSub('ดูแลอย่างไร',[
+      {label:'ลูบหัว · เพิ่มความสุข', run:hug},
+      {label:'อาบน้ำ · สะอาดเอี่ยม',  run:bath},
+      {label:'เก็บอึ · เก็บให้หมด',    run:sweep},
+      {label:'ฝึกสอน · สร้างวินัย',   run:train}
+    ]);
+  }
+  else if(key==='light'){
+    g.lightOff = !g.lightOff;
+    if(g.lightOff){ if(g.energy<60){ g.asleep=true; say('ราตรีสวัสดิ์...',5);} else say('ยังไม่ง่วงเลยนะ',4); }
+    else { g.asleep=false; say('อรุณสวัสดิ์!',4); }
+    beep(g.lightOff?330:520,.08);
+  }
+  else if(key==='med'){
+    if(!g.sick){ say('ยังแข็งแรงดี ไม่ต้องกินยา',4); }
+    else { g.sick=false; g.hp=clamp(g.hp+12); setFace('smile',6); say('หายป่วยแล้ว ขอบคุณนะ',5); beep(720,.12); beep(900,.1,.1); }
+  }
+  else if(key==='status') g.mode='status';
+  render();
+}
+
+function feed(i){
+  const f = FOODS[i];
+  if(g.full>=97){ say('อิ่มจนกินไม่ไหวแล้ว',4); return; }
+  g.full=clamp(g.full+f.f); g.happy=clamp(g.happy+f.h);
+  g.hp=clamp(g.hp+f.hp); g.energy=clamp(g.energy+f.e);
+  say(f.m,4); g.fx='eat'; g.eat=f.sp; g.fxT=5; setFace('happy',5); g.walk=0; g.dir=1; beep(520,.06); beep(660,.08,.07);
+}
+function hug(){
+  if(g.hugCd>0){ say('เพิ่งลูบไปเมื่อกี้นะ',3); return; }
+  g.happy=clamp(g.happy+12); g.hugCd=8; g.fx='heart'; g.fxT=4; setFace('happy',5);
+  say('เคล้าเคลียอย่างมีความสุข',4); beep(780,.07); beep(980,.09,.08);
+}
+function bath(){
+  g.clean=100; g.poops=0; g.happy=clamp(g.happy+6); g.energy=clamp(g.energy-4);
+  g.fx='bath'; g.fxT=4; setFace('smile',5); say('ตัวหอมสะอาดเอี่ยม!',4); beep(600,.07); beep(820,.07,.07);
+}
+function sweep(){
+  if(g.poops===0){ say('ไม่มีอะไรต้องเก็บ',3); return; }
+  g.poops=0; g.clean=clamp(g.clean+35); setFace('smile',4); say('เก็บกวาดเรียบร้อย!',4); beep(600,.07);
+}
+function train(){
+  if(g.trainCd>0){ say('เพิ่งฝึกไป ให้พักก่อน',3); return; }
+  g.disc=clamp(g.disc+14); g.happy=clamp(g.happy-5); g.mistakes=Math.max(0,g.mistakes-1); g.trainCd=15; setFace('angry',3);
+  say('ตั้งใจฝึกดีมาก วินัยเพิ่มขึ้น',5); beep(500,.07); beep(700,.07,.07);
+}
+
+/* ===================== มินิเกม ===================== */
+function startGame(type){
+  g.mode='game';
+  g.game = {type, round:0, wins:0, idx:0, num:1+Math.floor(Math.random()*8), result:''};
+  g.game.options = type==='lr' ? ['◀ ซ้าย','ขวา ▶']
+                 : type==='rps' ? ['ค้อน','กระดาษ','กรรไกร']
+                 : ['สูงกว่า','ต่ำกว่า'];
+}
+function guess(){
+  const G = g.game, pick = G.idx;
+  let win=false, draw=false;
+  if(G.type==='lr'){
+    const turn = Math.random()<.5?0:1;
+    win = pick===turn;
+    g.fx = turn?'right':'left'; g.fxT=2;
+    G.result = win?'ทายถูก!':'ทายผิด...';
+  }else if(G.type==='rps'){
+    const foe = Math.floor(Math.random()*3);
+    draw = foe===pick; win = (pick+1)%3===foe ? false : (foe+1)%3===pick;
+    G.result = `มันออก “${G.options[foe]}” — ` + (draw?'เสมอ':win?'เราชนะ!':'เราแพ้...');
+  }else{
+    const next = 1+Math.floor(Math.random()*9);
+    win = (pick===0 && next>G.num) || (pick===1 && next<G.num);
+    G.result = `เลขถัดไปคือ ${next} — ` + (win?'ถูกต้อง!':'พลาดไป...');
+    G.num = next;
+  }
+  setFace(win?'happy':'sad',3);
+  if(win) G.wins++;
+  if(!draw) G.round++;
+  beep(win?880:260,.1);
+  if(G.round>=3){
+    const great = G.wins>=2;
+    g.happy=clamp(g.happy + (great?32:16));
+    g.energy=clamp(g.energy-10);
+    g.full=clamp(g.full-6);
+    g.mode='idle'; g.game=null;
+    setFace(great?'happy':'sad',6);
+    say(great?`ชนะ ${G.wins}/3 สนุกที่สุด!`:`ได้ ${G.wins}/3 ครั้งหน้าเอาใหม่`,6);
+  }
+}
+
+/* ===================== บันทึกการเล่น ===================== */
+const KEY = 'pukpik.save.v1';
+let canSave = true;
+function save(){
+  if(!canSave || !g) return;
+  try{
+    g.lastTs = Date.now();
+    localStorage.setItem(KEY, JSON.stringify({v:1, g, opt, name:petName()}));
+  }catch(e){ canSave = false; showSaveState(); }
+}
+function loadSave(){
+  let raw = null;
+  try{ raw = localStorage.getItem(KEY); }catch(e){ canSave = false; return false; }
+  if(!raw) return false;
+  try{
+    const d = JSON.parse(raw);
+    if(!d || d.v !== 1 || !d.g) return false;
+    g = Object.assign(freshState(), d.g);
+    opt = Object.assign(opt, d.opt||{});
+    opt.paused = false;
+    if(d.name) document.getElementById('nm').value = d.name;
+    return true;
+  }catch(e){ return false; }
+}
+function wipeSave(){ try{ localStorage.removeItem(KEY); }catch(e){} }
+function showSaveState(){
+  const el = document.getElementById('saveNote');
+  if(el) el.textContent = canSave
+    ? 'บันทึกอัตโนมัติทุก 5 วินาที · เวลาเดินต่อแม้ปิดเครื่องไว้'
+    : 'อุปกรณ์นี้บันทึกไม่ได้ — ลองบันทึกไฟล์ลงเครื่องแล้วเปิดจากเบราว์เซอร์';
+}
+
+/* ===================== ปุ่ม ===================== */
+function pressA(){
+  if(!g.alive) return;
+  if(g.mode==='idle') g.cursor=(g.cursor+1)%MENU.length;
+  else if(g.mode==='sub') g.sub.idx=(g.sub.idx+1)%g.sub.items.length;
+  else if(g.mode==='game') g.game.idx=(g.game.idx+1)%g.game.options.length;
+  beep(700,.03); render();
+}
+function pressB(){
+  if(!g.alive) return;
+  if(g.mode==='idle') activate(MENU[g.cursor].k);
+  else if(g.mode==='sub'){ const it=g.sub.items[g.sub.idx]; g.mode='idle'; g.sub=null; it.run(); render(); }
+  else if(g.mode==='game'){ guess(); render(); }
+  else if(g.mode==='status'){ g.mode='idle'; render(); }
+}
+function pressC(){
+  if(!g.alive){ newGame(); return; }
+  if(g.mode!=='idle'){ g.mode='idle'; g.sub=null; g.game=null; g.msg=''; beep(320,.05); render(); }
+}
+
+/* ===================== เสียง ===================== */
+let ac=null;
+function beep(freq,dur,delay=0,vol=.05){
+  if(!opt.sound || FAST) return;
+  try{
+    ac = ac || new (window.AudioContext||window.webkitAudioContext)();
+    const t=ac.currentTime+delay, o=ac.createOscillator(), gn=ac.createGain();
+    o.type='square'; o.frequency.value=freq;
+    gn.gain.setValueAtTime(vol,t); gn.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(gn).connect(ac.destination); o.start(t); o.stop(t+dur+.02);
+  }catch(e){}
+}
+
+/* ===================== การเดิน ===================== */
+function moveStep(){
+  if(!g || !g.alive || g.stage==='egg' || g.asleep || g.mode!=='idle' || g.fx){ g.walk = 0; return; }
+  if(--g.walkT <= 0){
+    const r = Math.random();
+    g.walk = r < .38 ? 0 : (r < .69 ? -1 : 1);   // ยืนพัก / เดินซ้าย / เดินขวา
+    g.walkT = 4 + Math.floor(Math.random()*10);
+  }
+  if(g.walk){
+    g.px += g.walk;
+    if(g.px < 1){ g.px = 1; g.walk = 1; }
+    if(g.px > 15){ g.px = 15; g.walk = -1; }
+    g.dir = g.walk;
+  }
+}
+function shiftRow(row, n){
+  if(n > 0) return '.'.repeat(n) + row.slice(0, row.length-n);
+  return row.slice(-n) + '.'.repeat(-n);
+}
+
+/* ===================== สีหน้า ===================== */
+function expression(){
+  if(g.faceT>0 && g.face) return g.face;
+  if(g.asleep) return 'sleep';
+  if(g.sick) return 'sick';
+  if(g.hp<25 || g.full<10 || g.happy<10) return 'cry';
+  if(g.poops>=3 || g.clean<25 || g.full<25) return 'angry';
+  if(g.happy<35) return 'sad';
+  if(g.happy>75) return 'happy';
+  if(g.happy>50) return 'smile';
+  return 'neutral';
+}
+function setFace(name, t=4){ g.face=name; g.faceT=t; }
+
+/* ===================== วาดจอ ===================== */
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+function blit(rows,ox,oy){ rows.forEach((row,y)=>[...row].forEach((c,x)=>{ if(c==='#') ctx.fillRect(ox+x,oy+y,1,1); })); }
+function clearBlit(rows,ox,oy){ rows.forEach((row,y)=>[...row].forEach((c,x)=>{ if(c==='#') ctx.clearRect(ox+x,oy+y,1,1); })); }
+function shut(rows){
+  return rows.map((row,i)=>{
+    if(i<4||i>7) return row;
+    const a=[...row], f=row.indexOf('#'), l=row.lastIndexOf('#');
+    if(f<0) return row;
+    for(let x=f;x<=l;x++) a[x]='#';
+    return a.join('');
+  });
+}
+function draw(){
+  ctx.clearRect(0,0,32,24);
+  ctx.fillStyle='#232c0d';
+  if(g.mode==='status'||g.mode==='sub'||g.mode==='game') return;
+
+  let sp, fp=null;
+  if(!g.alive) sp = SP.ghost;
+  else if(g.stage==='egg') sp = eggSprite(g.eggId);
+  else { const c = creature(g.formId||0, LEVEL[g.stage], g.stage==='adultA'); sp = c.rows; fp = c.face; }
+  const still = (g.stage==='egg' || !g.alive);
+  let x = still ? 8 : Math.round(g.px), y = still ? 2 : 1;
+  if(g.alive){
+    if(g.stage==='egg') x += g.frame?1:-1; else y += g.frame?0:-1;
+    if(g.fx==='left') x-=3; if(g.fx==='right') x+=3;
+    if(g.walk && g.frame){                        // ก้าวขา: เลื่อนสองแถวล่างตามทิศที่เดิน
+      const n = sp.length;
+      sp = sp.map((row,i)=> i >= n-2 ? shiftRow(row, g.walk) : row);
+    }
+  }
+  blit(sp,x,y);
+  if(g.stage==='adultA' && g.alive && g.frame){ blit(STAR, x-4, y+2); blit(STAR, x+17, y+5); }
+  if(fp){
+    let f = FACES[expression()] || FACES.neutral;
+    if(Array.isArray(f[0])) f = f[g.frame];
+    clearBlit(f, x + fp.x + (g.walk ? g.dir : 0), y + fp.y);   // สายตามองไปทางที่เดิน
+  }
+
+  for(let i=0;i<g.poops;i++) blit(POOP, 1+i*6, 15);
+  if(g.asleep && g.frame) blit(ZZZ,26,2);
+  if(g.sick) blit(SKULL,1,1);
+  if(g.fx==='eat' && g.eat){
+    const bite = g.frame ? g.eat : g.eat.slice(Math.ceil(g.eat.length/2)); // สลับภาพเหมือนโดนกัดไปครึ่ง
+    blit(bite, 23, 11 + (g.eat.length - bite.length));
+  }
+  if(g.fx==='heart') blit(HEART,25,3);
+  if(g.fx==='bath' && g.frame) blit(DROP,25,8);
+}
+
+/* ===================== แสดงผล ===================== */
+const panel=document.getElementById('panel'), strip=document.getElementById('strip'), lcd=document.getElementById('lcd');
+function bar(v){ let s=''; for(let i=0;i<10;i++) s+=`<i class="${v>=(i+1)*10?'f':''}"></i>`; return `<div class="bar">${s}</div>`; }
+
+function vitalsHTML(){
+  const rows=[['อิ่ม',g.full],['อารมณ์',g.happy],['พลัง',g.energy],['สะอาด',g.clean],['สุขภาพ',g.hp],['วินัย',g.disc]];
+  return rows.map(([n,v])=>`<div><em>${n}</em><b><s class="${v<30?'low':''}" style="width:${Math.round(v)}%"></s></b></div>`).join('');
+}
+
+function render(){
+  const al=alerts();
+  document.querySelectorAll('.icon').forEach((el,i)=>{
+    el.classList.toggle('on', g.mode==='idle' && i===g.cursor);
+    el.classList.toggle('alert', !!al[MENU[i].k]);
+  });
+  lcd.classList.toggle('dark', g.lightOff && g.alive);
+
+  const el=document.getElementById('eggLbl');
+  if(el) el.textContent = g.stage==='egg' ? `ไข่${eggName(g.eggId)} #${g.eggId} / 100`
+    : `ร่าง ${formName(g.formId,g.stage==='adultA')} #${g.formId}`;
+  const vt=document.getElementById('vitals');
+  vt.style.display = opt.vitals ? 'grid' : 'none';
+  if(opt.vitals) vt.innerHTML = vitalsHTML();
+
+  if(g.mode==='status'){
+    panel.className='panel show';
+    panel.innerHTML =
+      `<div class="row"><span>อิ่ม</span>${bar(g.full)}</div>`+
+      `<div class="row"><span>อารมณ์</span>${bar(g.happy)}</div>`+
+      `<div class="row"><span>พลัง</span>${bar(g.energy)}</div>`+
+      `<div class="row"><span>สะอาด</span>${bar(g.clean)}</div>`+
+      `<div class="row"><span>สุขภาพ</span>${bar(g.hp)}</div>`+
+      `<div class="row"><span>วินัย</span>${bar(g.disc)}</div>`;
+    strip.textContent=`${petName()} · ${g.stage==='egg' ? 'ไข่'+eggName(g.eggId)+' #'+g.eggId : formName(g.formId,g.stage==='adultA')+' #'+g.formId} · อายุ ${days()} วัน`;
+  }
+  else if(g.mode==='sub'){
+    panel.className='panel show';
+    panel.innerHTML = `<h2>${g.sub.title}</h2>` +
+      g.sub.items.map((it,i)=>`<div class="opt ${i===g.sub.idx?'sel':''}">${it.icon?toSVG(it.icon):''}${it.label}</div>`).join('');
+    strip.textContent='A เลื่อน · B ยืนยัน · C ยกเลิก';
+  }
+  else if(g.mode==='game'){
+    const G=g.game;
+    panel.className='panel show';
+    panel.innerHTML = (G.type==='hilo' ? `<div class="big">${G.num}</div>` : `<h2>รอบ ${Math.min(G.round+1,3)} จาก 3</h2>`) +
+      G.options.map((o,i)=>`<div class="opt ${i===G.idx?'sel':''}">${o}</div>`).join('');
+    strip.textContent = G.result || (G.type==='hilo'?'เลขถัดไปจะสูงหรือต่ำกว่านี้?':'A เลื่อน · B ทาย · C เลิกเล่น');
+  }
+  else{
+    panel.className='panel'; panel.innerHTML='';
+    strip.textContent = !g.alive ? 'กด C เพื่อฟักไข่ใบใหม่'
+      : g.msg ? g.msg
+      : `${petName()} · อายุ ${days()} วัน · ${MENU[g.cursor].label}`;
+  }
+  draw();
+}
+
+/* ===================== ประกอบหน้าจอ ===================== */
+function buildIcons(){
+  const top=document.getElementById('iconsTop'), bot=document.getElementById('iconsBottom');
+  MENU.forEach((m,i)=>{
+    const b=document.createElement('button');
+    b.className='icon'; b.innerHTML=toSVG(ICONS[m.k])+`<u>${m.label}</u>`;
+    b.setAttribute('aria-label',m.label);
+    b.onclick=()=>{ g.cursor=i; if(g.mode==='idle') activate(m.k); else { g.mode='idle'; g.sub=null; g.game=null; activate(m.k); } };
+    (i<3?top:bot).appendChild(b);
+  });
+}
+function seg(id, items, get, set){
+  const el=document.getElementById(id);
+  const paint=()=>{ el.innerHTML=''; items.forEach(it=>{
+    const b=document.createElement('button');
+    b.textContent=it.label; b.className = get()===it.v ? 'act':'';
+    b.onclick=()=>{ set(it.v); paint(); render(); };
+    el.appendChild(b);
+  }); };
+  paint();
+}
+function startClock(){
+  if(clock) clearInterval(clock);
+  clock = setInterval(()=>{ tick(); g.lastTs = Date.now(); }, Math.round(1000/opt.speed));
+}
+
+buildIcons();
+const restored = loadSave();
+if(!restored) newGame();
+seg('segDiff', Object.keys(DIFF).map(k=>({label:DIFF[k].label,v:k})), ()=>opt.diff, v=>opt.diff=v);
+seg('segSpeed', [{label:'ปกติ',v:1},{label:'เร็ว x2',v:2},{label:'เร็ว x4',v:4}], ()=>opt.speed, v=>{opt.speed=v; startClock();});
+function eggLabel(){
+  document.getElementById('eggLbl').textContent =
+    g.stage==='egg' ? `ไข่${eggName(g.eggId)} #${g.eggId} / 100` : `ร่าง ${formName(g.formId,g.stage==='adultA')} #${g.formId}`;
+}
+function setEgg(n){
+  if(g.stage!=='egg'){ say('ฟักไปแล้ว เปลี่ยนไข่ไม่ได้',4); render(); return; }
+  g.eggId = ((n%100)+100)%100; say(`เปลี่ยนเป็นไข่${eggName(g.eggId)} #${g.eggId}`,4);
+  eggLabel(); save(); render();
+}
+document.getElementById('eggPrev').onclick = ()=>setEgg(g.eggId-1);
+document.getElementById('eggNext').onclick = ()=>setEgg(g.eggId+1);
+document.getElementById('eggRand').onclick = ()=>setEgg(Math.floor(Math.random()*100));
+seg('segKind', [{label:'เปิด',v:true},{label:'ปิด',v:false}], ()=>opt.kind, v=>opt.kind=v);
+seg('segVitals',[{label:'แสดง',v:true},{label:'ซ่อน',v:false}], ()=>opt.vitals, v=>opt.vitals=v);
+seg('segSound',[{label:'เปิด',v:true},{label:'ปิด',v:false}], ()=>opt.sound, v=>{opt.sound=v; beep(760,.07);});
+
+const padA=document.getElementById('padA'), padB=document.getElementById('padB'), padC=document.getElementById('padC');
+const hit=el=>{ el.classList.add('hit'); setTimeout(()=>el.classList.remove('hit'),90); };
+padA.onclick=()=>{hit(padA);pressA();}; padB.onclick=()=>{hit(padB);pressB();}; padC.onclick=()=>{hit(padC);pressC();};
+
+document.getElementById('pause').onclick=e=>{
+  opt.paused=!opt.paused;
+  e.target.textContent = opt.paused ? 'เดินเวลาต่อ' : 'หยุดเวลา';
+};
+document.getElementById('reset').onclick=()=>{ wipeSave(); newGame(); };
+document.getElementById('nm').oninput=()=>{ render(); save(); };
+
+addEventListener('keydown', e=>{
+  if(e.target.tagName==='INPUT') return;
+  const k=e.key.toLowerCase();
+  if(k>='1'&&k<='6'){ g.cursor=+k-1; if(g.mode!=='idle'){g.mode='idle';g.sub=null;g.game=null;} activate(MENU[+k-1].k); return; }
+  if(k==='a'||k==='arrowleft'||k==='arrowdown'){ hit(padA); pressA(); }
+  else if(k==='b'||k==='enter'||k===' '){ e.preventDefault(); hit(padB); pressB(); }
+  else if(k==='c'||k==='escape'||k==='backspace'){ e.preventDefault(); hit(padC); pressC(); }
+});
+
+if(restored) catchUp(); else render();
+showSaveState();
+startClock();
+setInterval(save, 5000);
+addEventListener('pagehide', save);
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) save(); else catchUp(); });
+let animN = 0;
+setInterval(()=>{
+  g.frame = 1 - g.frame;
+  if(++animN % 2 === 0 && g.fxT > 0 && --g.fxT === 0) g.fx = null;
+  moveStep();
+  draw();
+}, 250);
+</script>
+</body>
+</html>

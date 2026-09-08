@@ -60,6 +60,7 @@ body{
 
 .screen{border-radius:12px;padding:10px;background:linear-gradient(180deg,#1d1735,#332a55);box-shadow:inset 0 3px 8px rgba(0,0,0,.6)}
 .lcd{position:relative;aspect-ratio:32/24;background:linear-gradient(170deg,var(--lcd),var(--lcd-2));border-radius:4px;overflow:hidden}
+.lcd{cursor:pointer}
 .lcd canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
 .dots{position:absolute;inset:0;pointer-events:none;
   background:repeating-linear-gradient(90deg, rgba(0,0,0,.09) 0 1px, transparent 1px 3.125%),
@@ -185,7 +186,7 @@ kbd{font-family:var(--mono);letter-spacing:1px;font-size:10px;background:rgba(25
   </div>
 </details>
 
-<p class="hint">ไข่สุ่มได้ 100 ใบ และวิวัฒนาการได้ 100 ร่าง — เล่นออฟไลน์ได้ทั้งหมด ไม่ต้องต่อเน็ต — บนมือถือกด “แชร์ → เพิ่มไปยังหน้าจอโฮม” แล้วเปิดเล่นได้เหมือนแอป ระบบจำสถานะล่าสุดให้เอง<br>แตะไอคอนได้โดยตรง หรือใช้ <kbd>A</kbd> เลื่อน <kbd>B</kbd> เลือก <kbd>C</kbd> ย้อนกลับ (คีย์บอร์ดกด A B C หรือเลข 1–6 เพื่อเปิดเมนูนั้นเลย) ไอคอนที่กะพริบคือสิ่งที่มันกำลังต้องการ</p>
+<p class="hint">ไข่สุ่มได้ 100 ใบ และวิวัฒนาการได้ 100 ร่าง — เล่นออฟไลน์ได้ทั้งหมด ไม่ต้องต่อเน็ต — บนมือถือกด “แชร์ → เพิ่มไปยังหน้าจอโฮม” แล้วเปิดเล่นได้เหมือนแอป ระบบจำสถานะล่าสุดให้เอง<br>แตะบนจอเพื่อให้มันเดินไปหาจุดนั้น (คีย์บอร์ดใช้ปุ่มลูกศร) — แตะไอคอนได้โดยตรง หรือใช้ <kbd>A</kbd> เลื่อน <kbd>B</kbd> เลือก <kbd>C</kbd> ย้อนกลับ (คีย์บอร์ดกด A B C หรือเลข 1–6 เพื่อเปิดเมนูนั้นเลย) ไอคอนที่กะพริบคือสิ่งที่มันกำลังต้องการ</p>
 
 <script>
 /* ===================== ภาพพิกเซล ===================== */
@@ -395,7 +396,7 @@ function freshState(){
     mode:'idle', cursor:0, sub:null, game:null,
     msg:'ไข่กำลังขยับ... รอสักครู่', msgT:99,
     fx:null, fxT:0, frame:0, face:null, faceT:0,
-    px:8, dir:1, walk:0, walkT:6,
+    px:8, py:1, dir:1, walk:0, walkT:6, target:null,
     eggId:Math.floor(Math.random()*100), formId:null, lastTs:Date.now()
   };
 }
@@ -781,8 +782,48 @@ function buzz(ms){                                   // สั่นสั้น
 function tap(freq=700, ms=12){ beep(freq,.035,0,.045); buzz(ms); }   // เสียง+สั่น ตอนกดปุ่ม
 
 /* ===================== การเดิน ===================== */
+const PY_MIN = 1, PY_MAX = 3;
+const canRoam = () => g && g.alive && g.stage!=='egg' && !g.asleep && g.mode==='idle';
+const inX = v => Math.max(1, Math.min(15, v));
+const inY = v => Math.max(PY_MIN, Math.min(PY_MAX, v));
+
+function walkTo(cx, cy){                          // แตะบนจอ: สั่งให้เดินไปหาจุดนั้น
+  if(!canRoam()) return false;
+  g.target = { x: inX(Math.round(cx - 8)), y: inY(Math.round(cy - 8)), from: g.px };
+  g.walkT = 99;
+  return true;
+}
+function nudge(dx, dy){                           // ปุ่มลูกศร: ดันไปทีละก้าว
+  if(!canRoam()) return false;
+  g.target = null;
+  g.px = inX(g.px + dx*2); g.py = inY(g.py + dy);
+  if(dx){ g.dir = dx; g.walk = dx; }
+  g.walkT = 6; draw();
+  return true;
+}
+function arrived(){                               // ถึงที่หมายแล้ว — ได้เดินเล่นสมใจ
+  const far = Math.abs(g.px - g.target.from) >= 6;
+  g.target = null; g.walkT = 4;
+  if(!far) return;
+  g.happy = clamp(g.happy + 1.5);
+  g.energy = clamp(g.energy - .5);
+  if(Math.random() < .3) say('เดินเล่นเพลินเลย', 4);
+}
+
 function moveStep(){
-  if(!g || !g.alive || g.stage==='egg' || g.asleep || g.mode!=='idle' || g.fx){ g.walk = 0; return; }
+  if(!g || !g.alive || g.stage==='egg' || g.asleep || g.mode!=='idle' || g.fx){ g.walk = 0; g.target = null; return; }
+  if(g.target){
+    if(g.py !== g.target.y) g.py += Math.sign(g.target.y - g.py);
+    const dx = g.target.x - g.px;
+    if(Math.abs(dx) <= 1){
+      g.px = g.target.x; g.walk = 0;
+      if(g.py === g.target.y) arrived();
+    }else{
+      const s = Math.sign(dx);
+      g.px = inX(g.px + s*2); g.walk = s; g.dir = s;   // รีบเดินไปหาเร็วกว่าเดินเล่นปกติ
+    }
+    return;
+  }
   if(--g.walkT <= 0){
     const r = Math.random();
     g.walk = r < .38 ? 0 : (r < .69 ? -1 : 1);   // ยืนพัก / เดินซ้าย / เดินขวา
@@ -837,7 +878,7 @@ function draw(){
   else if(g.stage==='egg') sp = eggSprite(g.eggId);
   else { const c = creature(g.formId||0, LEVEL[g.stage], g.stage==='adultA'); sp = c.rows; fp = c.face; }
   const still = (g.stage==='egg' || !g.alive);
-  let x = still ? 8 : Math.round(g.px), y = still ? 2 : 1;
+  let x = still ? 8 : Math.round(g.px), y = still ? 2 : g.py;
   if(g.alive){
     if(g.stage==='egg') x += g.frame?1:-1; else y += g.frame?0:-1;
     if(g.fx==='left') x-=3; if(g.fx==='right') x+=3;
@@ -974,6 +1015,15 @@ seg('segVitals',[{label:'แสดง',v:true},{label:'ซ่อน',v:false}], 
 seg('segSound',[{label:'เปิด',v:true},{label:'ปิด',v:false}], ()=>opt.sound, v=>{opt.sound=v; beep(760,.07);});
 seg('segHaptic',[{label:'เปิด',v:true},{label:'ปิด',v:false}], ()=>opt.haptic, v=>{opt.haptic=v; buzz(25);});
 
+function aim(ev){
+  const r = cv.getBoundingClientRect();
+  return walkTo((ev.clientX - r.left) / r.width * 32, (ev.clientY - r.top) / r.height * 24);
+}
+lcd.addEventListener('pointerdown', e=>{ if(aim(e)) tap(560, 8); });
+lcd.addEventListener('pointermove', e=>{         // ลากนำทางได้เฉพาะเมาส์ มือถือจะได้เลื่อนหน้าจอตามปกติ
+  if(e.pointerType === 'mouse' && e.buttons) aim(e);
+});
+
 const padA=document.getElementById('padA'), padB=document.getElementById('padB'), padC=document.getElementById('padC');
 const PAD_TONE = {padA:700, padB:880, padC:420};
 const hit=el=>{                                      // เด้งปุ่ม + เสียงคลิก + สั่น
@@ -994,6 +1044,8 @@ addEventListener('keydown', e=>{
   if(e.target.tagName==='INPUT') return;
   const k=e.key.toLowerCase();
   if(k>='1'&&k<='6'){ g.cursor=+k-1; if(g.mode!=='idle'){g.mode='idle';g.sub=null;g.game=null;} activate(MENU[+k-1].k); return; }
+  const step = {arrowleft:[-1,0], arrowright:[1,0], arrowup:[0,-1], arrowdown:[0,1]}[k];
+  if(step && canRoam()){ e.preventDefault(); nudge(step[0], step[1]); return; }
   if(k==='a'||k==='arrowleft'||k==='arrowdown'){ hit(padA); pressA(); }
   else if(k==='b'||k==='enter'||k===' '){ e.preventDefault(); hit(padB); pressB(); }
   else if(k==='c'||k==='escape'||k==='backspace'){ e.preventDefault(); hit(padC); pressC(); }

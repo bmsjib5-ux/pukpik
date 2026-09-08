@@ -662,6 +662,7 @@ function saveOpts(){
 function loadOpts(){
   const raw = lsGet(OPT_KEY);
   if(raw) try{ opt = Object.assign(opt, JSON.parse(raw)||{}); }catch(e){}
+  if(opt.speed !== 1 && opt.speed !== 2) opt.speed = 2;   // เคยมี x4 ให้ดึงกลับมาที่ x2
   opt.paused = false;
 }
 function setName(v){ document.getElementById('nm').value = v; }
@@ -955,7 +956,7 @@ slot = Math.min(SLOTS-1, Math.max(0, parseInt(lsGet(CUR_KEY), 10) || 0));
 const restored = loadSlot(slot);
 if(!restored) newGame();
 seg('segDiff', Object.keys(DIFF).map(k=>({label:DIFF[k].label,v:k})), ()=>opt.diff, v=>opt.diff=v);
-seg('segSpeed', [{label:'ปกติ',v:1},{label:'เร็ว x2',v:2},{label:'เร็ว x4',v:4}], ()=>opt.speed, v=>{opt.speed=v; startClock();});
+seg('segSpeed', [{label:'ปกติ',v:1},{label:'เร็ว x2',v:2}], ()=>opt.speed, v=>{opt.speed=v; startClock();});
 function eggLabel(){
   document.getElementById('eggLbl').textContent =
     g.stage==='egg' ? `ไข่${eggName(g.eggId)} #${g.eggId} / 100` : `ร่าง ${formName(g.formId,g.stage==='adultA')} #${g.formId}`;

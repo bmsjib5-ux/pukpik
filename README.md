@@ -5,6 +5,8 @@
 
 **เล่นเลย → https://bmsjib5-ux.github.io/pukpik/**
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/bmsjib5-ux/pukpik)
+
 - ไข่สุ่มได้ 100 ใบ และวิวัฒนาการได้ 100 ร่าง
 - **ช่องบันทึก 4 ช่อง** เลี้ยงพร้อมกันได้ 4 ตัว สลับไปมาได้จากเมนูตั้งค่า
 - บันทึกสถานะอัตโนมัติลง `localStorage` และเดินเวลาต่อให้แม้ปิดหน้าไว้
@@ -26,13 +28,20 @@ python3 -m http.server 8000
 
 รีโปนี้มี `render.yaml` (Blueprint) พร้อมใช้งานเป็น **Static Site** อยู่แล้ว
 
+วิธีเร็วสุดคือกดปุ่ม **Deploy to Render** ด้านบน แล้ว **Apply** — Render จะอ่าน `render.yaml` เอง
+
+หรือทำเองทีละขั้น:
+
 1. เข้า https://dashboard.render.com → **New +** → **Blueprint**
-2. เลือกรีโป `bmsjib5-ux/pukpik` แล้วกด **Apply**
+2. เลือกรีโป `bmsjib5-ux/pukpik` → branch `main` แล้วกด **Apply**
 3. Render จะสร้าง static site ชื่อ `pukpik` และให้ URL รูปแบบ
    `https://pukpik.onrender.com` (ถ้าชื่อซ้ำจะมีตัวห้อยต่อท้าย)
 
-ตั้งค่าที่ใช้: `staticPublishPath: .` และ rewrite ทุก path ไปที่ `/index.html`
-ทุกครั้งที่ push เข้า branch ที่ผูกไว้ Render จะ deploy ให้อัตโนมัติ
+ตั้งค่าที่ใช้: build คัดเฉพาะ `index.html` ลง `_site/` แล้วเสิร์ฟจากที่นั่น
+พร้อม rewrite ทุก path ไปที่ `/index.html` และเปิด preview ให้ทุก pull request
+ทุกครั้งที่ push เข้า `main` Render จะ deploy ให้อัตโนมัติ
+
+> Static site บน Render แพลนฟรีไม่มีหลับ (ต่างจาก web service) เปิดเล่นได้ตลอด
 
 ## Deploy ขึ้น GitHub Pages
 

@@ -2,8 +2,9 @@ services:
   - type: web
     name: pukpik
     runtime: static
-    buildCommand: ""
-    staticPublishPath: .
+    # เผยแพร่เฉพาะไฟล์เกม ไม่ต้องเอา README / .github ขึ้นเว็บด้วย (เหมือนฝั่ง GitHub Pages)
+    buildCommand: mkdir -p _site && cp index.html _site/
+    staticPublishPath: ./_site
     pullRequestPreviewsEnabled: true
     routes:
       - type: rewrite

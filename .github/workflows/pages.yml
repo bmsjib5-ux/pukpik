@@ -29,10 +29,16 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      # เผยแพร่เฉพาะไฟล์เกม ไม่ต้องเอา README / render.yaml / .github ขึ้นเว็บด้วย
+      - name: Stage site
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .                   # index.html อยู่ที่ root อยู่แล้ว
+          path: _site
 
       - name: Deploy
         id: deployment
